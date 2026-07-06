@@ -6,6 +6,7 @@
 - Added a `/clear` slash command that clears the active conversation context while preserving the current session id and durable session history (#1677).
 - Added an Extragoal local skill template (`docs/extragoal-skill-template.md`) documenting an external final review gate on top of `ultragoal` — a fresh-context, cross-family, tool-restricted read-only reviewer with a machine-parsable verdict contract, mandatory bundle secret scan, prompt-injection stance, explicit findings triage, and a bounded re-sign loop — plus a `reviewer` stance profile and cross-session review-gate recipe in `docs/multi-vendor-profiles.md`, pinned by `test/extragoal-template.test.ts`.
 - Added opt-in live turn streaming to the notifications surface. With `GJC_NOTIFICATIONS_STREAM=1` the session WebSocket now emits throttled non-finalized `turn_stream` frames (each carrying a per-turn `messageRef`) as the assistant message streams, and the Telegram threaded daemon edits ONE message in place — via `editMessageText` keyed by `(session, coalesceKey)` — so the finalized text lands on the same message instead of posting a new one. Off by default; without a `messageRef` finalized turns keep their legacy one-message-per-turn behaviour. Throttle interval is `GJC_NOTIFICATIONS_STREAM_INTERVAL_MS` (default 500ms); streamed frames remain suppressed under redaction.
+- GJC restores an opt-in MCP runtime for user- and project-scoped servers, gated behind a new `enableMCP` session option that only the CLI turns on while embedders, ACP, and subagents stay off. Top-level sessions always own an `MCPManager` so `/mcp` reload/connect work even with zero connected servers, autoload-eligible servers connect at session startup, and `mcp.discoveryMode` is the sole switch for MCP discovery — kept deliberately independent of `tools.discoveryMode`, which now defaults to `"all"`. MCP discovery is source-aware per tool: `gjc-plugins` provider tools are always-on, while user-config server tools stay selectable behind `search_tool_bm25` until explicitly activated. The runtime `/mcp reload` path shares the exact startup trust gates (`buildTrustGatedMCPDiscoverOptions`): a reload never connects project-config servers while `mcp.enableProjectConfig` is off and never implicitly connects `autoload: false` servers — `/mcp enable`/`/mcp reconnect` remain the explicit per-server consent path.
 
 ### Fixed
 
@@ -54,10 +55,6 @@
 ### Added
 
 - Skills can now be invoked inline within a prompt (for example, mid-message `/skill:*` references) instead of only as a standalone prompt, with matching autocomplete, input-controller queueing, and ACP dispatch support.
-
-### Added
-
-- GJC restores an opt-in MCP runtime for user- and project-scoped servers, gated behind a new `enableMCP` session option that only the CLI turns on while embedders, ACP, and subagents stay off. Top-level sessions always own an `MCPManager` so `/mcp` reload/connect work even with zero connected servers, autoload-eligible servers connect at session startup, and `mcp.discoveryMode` is the sole switch for MCP discovery — kept deliberately independent of `tools.discoveryMode`, which now defaults to `"all"`. MCP discovery is source-aware per tool: `gjc-plugins` provider tools are always-on, while user-config server tools stay selectable behind `search_tool_bm25` until explicitly activated.
 
 ### Fixed
 
